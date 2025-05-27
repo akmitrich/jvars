@@ -144,6 +144,7 @@ mod tests {
             }),
             data["friends"][3]
         );
-        println!("data={:#?}", data);
+        update_or_create(&mut data, "", Value::Bool(true)).unwrap();
+        assert!(data.as_bool().unwrap());
     }
 }
