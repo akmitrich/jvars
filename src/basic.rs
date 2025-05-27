@@ -18,7 +18,11 @@ pub fn get_mut(json: &mut Value, path: impl AsRef<str>) -> Option<&mut Value> {
         })
 }
 
-pub fn update_or_create(json: &mut Value, path: impl AsRef<str>, value: Value) {
+pub fn update_or_create(
+    json: &mut Value,
+    path: impl AsRef<str>,
+    value: Value,
+) -> crate::Result<()> {
     let path = path.as_ref();
     let mut valid_path = path;
     let mut current = get_mut(json, path);
@@ -39,7 +43,7 @@ pub fn update_or_create(json: &mut Value, path: impl AsRef<str>, value: Value) {
         }
     }
     let Some(diff) = path.strip_prefix(valid_path) else {
-        return;
+        return Err(crate::Error::ShitHappens(path.to_string()));
     };
     let fin = if diff.is_empty() {
         current
@@ -75,6 +79,9 @@ pub fn update_or_create(json: &mut Value, path: impl AsRef<str>, value: Value) {
     };
     if let Some(res) = fin {
         *res = value;
+        Ok(())
+    } else {
+        Err(crate::Error::InvalidDataPath(path.to_string()))
     }
 }
 
@@ -126,9 +133,17 @@ mod tests {
               }
             ]
         });
-        update_or_create(&mut data, "friends.2.name", json!("Мама"));
+        update_or_create(&mut data, "friends.2.name", json!("Мама")).unwrap();
         assert_eq!("Мама", data["friends"][2]["name"]);
-        update_or_create(&mut data, "friends.3.name", json!("Юлия"));
+        update_or_create(&mut data, "friends.3.id", 42.into()).unwrap();
+        update_or_create(&mut data, "friends.3.name", "Юлия".into()).unwrap();
+        assert_eq!(
+            json!({
+                "id": 42,
+                "name": "Юлия"
+            }),
+            data["friends"][3]
+        );
         println!("data={:#?}", data);
     }
 }

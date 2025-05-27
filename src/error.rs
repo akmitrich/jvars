@@ -8,6 +8,8 @@ pub enum Error {
     #[from]
     Json(serde_json::Error),
     // -- Internal
+    InvalidDataPath(String),
+    ShitHappens(String),
 }
 
 impl core::fmt::Display for Error {
