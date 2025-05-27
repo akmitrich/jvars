@@ -48,34 +48,35 @@ pub fn update_or_create(
     let fin = if diff.is_empty() {
         current
     } else {
-        diff.strip_prefix('.')
-            .unwrap_or(diff)
-            .split('.')
-            .fold(current, |a, b| match a {
-                Some(Value::Array(arr)) => {
-                    let i = b.parse().ok()?;
-                    while arr.len() <= i {
-                        arr.push(Value::Null);
+        current.and_then(|start| {
+            diff.strip_prefix('.')
+                .unwrap_or(diff)
+                .split('.')
+                .try_fold(start, |a, b| match a {
+                    Value::Array(arr) => {
+                        let i = b.parse().ok()?;
+                        while arr.len() <= i {
+                            arr.push(Value::Null);
+                        }
+                        arr.get_mut(i)
                     }
-                    arr.get_mut(i)
-                }
-                Some(Value::Object(map)) => {
-                    map.insert(b.to_string(), Value::Null);
-                    map.get_mut(b)
-                }
-                None => None,
-                Some(a) => match b.parse::<usize>() {
-                    Ok(i) => {
-                        *a = Value::Array(vec![Value::Null; i + 1]);
-                        a.get_mut(i)
+                    Value::Object(map) => {
+                        map.insert(b.to_string(), Value::Null);
+                        map.get_mut(b)
                     }
-                    Err(_) => {
-                        *a = json!({});
-                        a[b] = Value::Null;
-                        a.get_mut(b)
-                    }
-                },
-            })
+                    _ => match b.parse::<usize>() {
+                        Ok(i) => {
+                            *a = Value::Array(vec![Value::Null; i + 1]);
+                            a.get_mut(i)
+                        }
+                        Err(_) => {
+                            *a = json!({});
+                            a[b] = Value::Null;
+                            a.get_mut(b)
+                        }
+                    },
+                })
+        })
     };
     if let Some(res) = fin {
         *res = value;

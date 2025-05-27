@@ -12,6 +12,27 @@ mod tests {
     use serde_json::{Value, json};
 
     #[test]
+    fn access_via_path() {
+        let mut data = json!({
+            "friends": [
+              {
+                "id": 0,
+                "name": "Holt Stewart"
+              },
+              {
+                "id": 1,
+                "name": "Fuentes Carroll"
+              }
+            ]
+        });
+        let id = data.path("friends.0.id").unwrap();
+        assert_eq!(0, id.as_i64().unwrap());
+        let name = data.path_mut("friends.1.name").unwrap();
+        *name = json!(42);
+        assert_eq!(42, data["friends"][1]["name"]);
+    }
+
+    #[test]
     fn extend_json() {
         let mut data = json!({
             "friends": [
