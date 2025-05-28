@@ -45,7 +45,9 @@ pub fn update_or_create(
     let Some(diff) = path.strip_prefix(current_path) else {
         return Err(crate::Error::Impossible(path.to_string()));
     };
-    if let Some(dst) = create_destination_if_needed(current_value, diff) {
+    if let Some(dst) =
+        create_destination_if_needed(current_value, diff.strip_prefix('.').unwrap_or(diff))
+    {
         *dst = value;
         Ok(())
     } else {
@@ -61,34 +63,33 @@ fn create_destination_if_needed<'a>(
         valid
     } else {
         valid.and_then(|start| {
-            rest_path
-                .strip_prefix('.')
-                .unwrap_or(rest_path)
-                .split('.')
-                .try_fold(start, |a, b| match a {
-                    Value::Array(arr) => {
-                        let i = b.parse().ok()?;
-                        while arr.len() <= i {
-                            arr.push(Value::Null);
-                        }
-                        arr.get_mut(i)
+            rest_path.split('.').try_fold(start, |a, b| match a {
+                Value::Array(arr) => {
+                    // in array index must be `usize`
+                    let i = b.parse().ok()?;
+                    while arr.len() <= i {
+                        // make `i` to be a valid index inside the array
+                        arr.push(Value::Null);
                     }
-                    Value::Object(map) => {
-                        map.insert(b.to_string(), Value::Null);
-                        map.get_mut(b)
+                    arr.get_mut(i)
+                }
+                Value::Object(map) => {
+                    map.insert(b.to_string(), Value::Null);
+                    map.get_mut(b)
+                }
+                _ => {
+                    if let Ok(i) = b.parse::<usize>() {
+                        // index is `usize` then create an array and enough nulls inside it
+                        *a = Value::Array(vec![Value::Null; i + 1]);
+                        a.get_mut(i)
+                    } else {
+                        // else create an object and put null for key `b`
+                        *a = json!({});
+                        a[b] = Value::Null;
+                        a.get_mut(b)
                     }
-                    _ => match b.parse::<usize>() {
-                        Ok(i) => {
-                            *a = Value::Array(vec![Value::Null; i + 1]);
-                            a.get_mut(i)
-                        }
-                        Err(_) => {
-                            *a = json!({});
-                            a[b] = Value::Null;
-                            a.get_mut(b)
-                        }
-                    },
-                })
+                }
+            })
         })
     }
 }
