@@ -1,3 +1,6 @@
+//! # JVars
+//! Simple tools to deal with JSON values via data paths.
+
 mod basic;
 mod error;
 mod ext;

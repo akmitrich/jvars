@@ -184,7 +184,23 @@ assert!(data.as_bool().unwrap());
 ```rust
 let mut data = json!({});
 data.update_or_create("a.b.c.d.e.f", 543.into()).unwrap();
-assert_eq!(543, data["a"]["b"]["c"]["d"]["e"]["f"]);
+println!("{}", serde_json::to_string_pretty(&data).unwrap());
+```
+Output for above snippet:
+```json
+{
+  "a": {
+    "b": {
+      "c": {
+        "d": {
+          "e": {
+            "f": 543
+          }
+        }
+      }
+    }
+  }
+}
 ```
 
 ```rust

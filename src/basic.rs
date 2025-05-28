@@ -1,5 +1,6 @@
 use serde_json::{Value, json};
 
+/// Get shared reference to the value in `path` inside `json`
 pub fn get(json: &Value, path: impl AsRef<str>) -> Option<&Value> {
     path.as_ref()
         .split('.')
@@ -9,6 +10,7 @@ pub fn get(json: &Value, path: impl AsRef<str>) -> Option<&Value> {
         })
 }
 
+/// Get exclusive reference to the value in `path` inside `json`
 pub fn get_mut(json: &mut Value, path: impl AsRef<str>) -> Option<&mut Value> {
     path.as_ref()
         .split('.')
@@ -18,6 +20,7 @@ pub fn get_mut(json: &mut Value, path: impl AsRef<str>) -> Option<&mut Value> {
         })
 }
 
+/// Update the `path` inside `json` with `value` or create the `path` if it does not exist and place `value` in it
 pub fn update_or_create(
     json: &mut Value,
     path: impl AsRef<str>,
