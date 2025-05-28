@@ -24,33 +24,46 @@ pub fn update_or_create(
     value: Value,
 ) -> crate::Result<()> {
     let path = path.as_ref();
-    let mut valid_path = path;
-    let mut current = get_mut(json, path);
-    while current.is_none() {
-        let mut next = valid_path;
-        for (i, c) in valid_path.char_indices().rev() {
-            next = &valid_path[..i];
+    let mut current_path = path;
+    let mut current_value = get_mut(json, path);
+    while current_value.is_none() {
+        let mut next = current_path;
+        for (i, c) in current_path.char_indices().rev() {
+            next = &current_path[..i];
             if c == '.' {
                 break;
             }
         }
-        valid_path = next;
-        if valid_path.is_empty() {
+        current_path = next;
+        if current_path.is_empty() {
             // Brave new data path in json
-            current = Some(json);
+            current_value = Some(json);
         } else {
-            current = get_mut(json, valid_path);
+            current_value = get_mut(json, current_path);
         }
     }
-    let Some(diff) = path.strip_prefix(valid_path) else {
-        return Err(crate::Error::ShitHappens(path.to_string()));
+    let Some(diff) = path.strip_prefix(current_path) else {
+        return Err(crate::Error::Impossible(path.to_string()));
     };
-    let fin = if diff.is_empty() {
-        current
+    if let Some(dst) = create_destination_if_needed(current_value, diff) {
+        *dst = value;
+        Ok(())
     } else {
-        current.and_then(|start| {
-            diff.strip_prefix('.')
-                .unwrap_or(diff)
+        Err(crate::Error::InvalidDataPath(path.to_string()))
+    }
+}
+
+fn create_destination_if_needed<'a>(
+    valid: Option<&'a mut Value>,
+    rest_path: &str,
+) -> Option<&'a mut Value> {
+    if rest_path.is_empty() {
+        valid
+    } else {
+        valid.and_then(|start| {
+            rest_path
+                .strip_prefix('.')
+                .unwrap_or(rest_path)
                 .split('.')
                 .try_fold(start, |a, b| match a {
                     Value::Array(arr) => {
@@ -77,12 +90,6 @@ pub fn update_or_create(
                     },
                 })
         })
-    };
-    if let Some(res) = fin {
-        *res = value;
-        Ok(())
-    } else {
-        Err(crate::Error::InvalidDataPath(path.to_string()))
     }
 }
 

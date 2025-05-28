@@ -9,7 +9,7 @@ pub enum Error {
     Json(serde_json::Error),
     // -- Internal
     InvalidDataPath(String),
-    ShitHappens(String),
+    Impossible(String),
 }
 
 impl core::fmt::Display for Error {
