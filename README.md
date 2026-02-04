@@ -2,7 +2,7 @@
 Simple tools to deal with JSON values via data paths.
 
 ## Dependencies
-The crate has `DataPathExt` trait implementation for 
+The crate has `DataPathExt` trait along with its implementation for 
 - `serde_json::Value`.
 
 Pull requests are welcomed.
@@ -42,6 +42,8 @@ Let's say we have
 }
 ```
 
+Special case of empty path is the whole JSON itself.
+
 ### Get data
 Examples of paths:
 - `registered` -> "2018-07-24T06:26:18 -03:00"
@@ -67,6 +69,39 @@ Examples of paths:
     "ea",
     "cillum"
 ]
+```
+- `` ->
+```json
+{
+    "registered": "2018-07-24T06:26:18 -03:00",
+    "latitude": -1.198644,
+    "longitude": 18.3947,
+    "tags": [
+      "non",
+      "aute",
+      "amet",
+      "irure",
+      "officia",
+      "ea",
+      "cillum"
+    ],
+    "friends": [
+      {
+        "id": 0,
+        "name": "Holt Stewart"
+      },
+      {
+        "id": 1,
+        "name": "Fuentes Carroll"
+      },
+      {
+        "id": 2,
+        "name": "Greta Kane"
+      }
+    ],
+    "greeting": "Hello, Sanchez Daniels! You have 1 unread messages.",
+    "favoriteFruit": "apple"
+}
 ```
 
 Hope you see the idea of data path clearly.
@@ -207,13 +242,22 @@ Output for above snippet:
 let mut data = json!({});
 data.update_or_create("array1", json!([])).unwrap();
 assert!(data["array1"].is_array());
-let n = 501;
+let n = 5;
 data.update_or_create(format!("array1.{}", n), true.into())
     .unwrap();
-for i in 0..(n - 1) {
-    assert!(data["array1"][i].is_null());
-}
-assert!(data["array1"][n].as_bool().unwrap());
+println!("{}", serde_json::to_string_pretty(&data).unwrap());
 ```
 
-Hope you may write some code which always gets `None` from nonexistent path inside `serde_json::Value`.
+Output is
+```json
+{
+  "array1": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    true
+  ]
+}
+```

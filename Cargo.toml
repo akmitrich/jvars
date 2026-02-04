@@ -1,6 +1,6 @@
 [package]
 name = "jvars"
-version = "0.1.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Alexander Kalashnikov"]
 description = "Tools for working with JSON via data paths"
@@ -10,5 +10,5 @@ repository = "https://github.com/akmitrich/jvars"
 readme = "README.md"
 
 [dependencies]
-derive_more = { version = "2.0.1", features = ["from"] }
-serde_json = "1.0.140"
+serde_json = "1.0.149"
+thiserror = "2.0.18"
