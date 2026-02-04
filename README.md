@@ -2,7 +2,7 @@
 Simple tools to deal with JSON values via data paths.
 
 ## Dependencies
-The crate has `DataPathExt` trait implementation for 
+The crate has `DataPathExt` trait along with its implementation for 
 - `serde_json::Value`.
 
 Pull requests are welcomed.

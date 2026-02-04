@@ -104,4 +104,43 @@ mod tests {
         assert_ne!(42, data);
         assert!(data["abc"].as_bool().unwrap());
     }
+
+    #[test]
+    fn some_data_contracts() {
+        let mut data = json!({
+            "registered": "2018-07-24T06:26:18 -03:00",
+            "latitude": -1.198644,
+            "longitude": 18.3947,
+            "tags": [
+              "non",
+              "aute",
+              "amet",
+              "irure",
+              "officia",
+              "ea",
+              "cillum"
+            ],
+            "friends": [
+              {
+                "id": 0,
+                "name": "Holt Stewart"
+              },
+              {
+                "id": 1,
+                "name": "Fuentes Carroll"
+              },
+              {
+                "id": 2,
+                "name": "Greta Kane"
+              }
+            ],
+            "greeting": "Hello, Sanchez Daniels! You have 1 unread messages.",
+            "favoriteFruit": "apple"
+        });
+        assert_eq!("apple", data.delete("favoriteFruit").unwrap());
+        for i in 0..3 {
+            assert_eq!(&i, data.delete("friends.0").unwrap().path("id").unwrap());
+        }
+        assert!(data.delete("friends.0").is_none());
+    }
 }

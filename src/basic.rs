@@ -75,7 +75,13 @@ pub fn delete(json: &mut Value, path: impl AsRef<str>) -> Option<Value> {
     let target = get_mut(json, path)?;
     match target {
         Value::Object(map) => map.remove(index),
-        Value::Array(arr) => index.parse::<usize>().ok().map(|n| arr.remove(n)),
+        Value::Array(arr) => index.parse::<usize>().ok().and_then(|n| {
+            if n < arr.len() {
+                Some(arr.remove(n))
+            } else {
+                None
+            }
+        }),
         _ => None,
     }
 }
