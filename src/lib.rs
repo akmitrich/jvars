@@ -28,6 +28,7 @@ mod tests {
               }
             ]
         });
+        assert_eq!(&data, data.path("").unwrap());
         let id = data.path("friends.0.id").unwrap();
         assert_eq!(0, id.as_i64().unwrap());
         let name = data.path_mut("friends.1.name").unwrap();
@@ -53,6 +54,7 @@ mod tests {
               }
             ]
         });
+        assert_eq!(&data.clone(), data.path_mut("").unwrap());
         data.update_or_create("friends.2.name", json!("Мама"))
             .unwrap();
         assert_eq!("Мама", data["friends"][2]["name"]);
@@ -85,9 +87,21 @@ mod tests {
         let n = 501;
         data.update_or_create(format!("array1.{}", n), true.into())
             .unwrap();
-        for i in 0..(n - 1) {
-            assert!(data["array1"][i].is_null());
-        }
+        assert!(
+            data["array1"].as_array().unwrap()[..(n - 1)]
+                .iter()
+                .all(Value::is_null)
+        );
         assert!(data["array1"][n].as_bool().unwrap());
+    }
+
+    #[test]
+    fn start_from_null() {
+        let mut data = Value::Null;
+        data.update_or_create("", 42.into()).unwrap();
+        assert_eq!(42, data);
+        data.update_or_create("abc", true.into()).unwrap();
+        assert_ne!(42, data);
+        assert!(data["abc"].as_bool().unwrap());
     }
 }

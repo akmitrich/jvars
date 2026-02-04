@@ -2,6 +2,9 @@ use serde_json::{Value, json};
 
 /// Get shared reference to the value in `path` inside `json`
 pub fn get(json: &Value, path: impl AsRef<str>) -> Option<&Value> {
+    if path.as_ref().is_empty() {
+        return Some(json);
+    }
     path.as_ref()
         .split('.')
         .try_fold(json, |sub_value, next| match sub_value {
@@ -12,11 +15,14 @@ pub fn get(json: &Value, path: impl AsRef<str>) -> Option<&Value> {
 
 /// Get exclusive reference to the value in `path` inside `json`
 pub fn get_mut(json: &mut Value, path: impl AsRef<str>) -> Option<&mut Value> {
+    if path.as_ref().is_empty() {
+        return Some(json);
+    }
     path.as_ref()
         .split('.')
         .try_fold(json, |sub_value, next| match sub_value {
             Value::Array(a) => a.get_mut(next.parse::<usize>().ok()?),
-            _ => sub_value.get_mut(next),
+            sub_value => sub_value.get_mut(next),
         })
 }
 
@@ -55,6 +61,22 @@ pub fn update_or_create(
         Ok(())
     } else {
         Err(crate::Error::InvalidDataPath(path.to_string()))
+    }
+}
+
+/// Delete the value in the `path` and return it; returns None if there is no value in the `path`
+pub fn delete(json: &mut Value, path: impl AsRef<str>) -> Option<Value> {
+    if path.as_ref().is_empty() {
+        return Some(json.take());
+    }
+    let last_dot = path.as_ref().rfind('.').unwrap_or(0);
+    let (path, tail) = path.as_ref().split_at(last_dot);
+    let index = tail.strip_prefix(".").unwrap_or(tail);
+    let target = get_mut(json, path)?;
+    match target {
+        Value::Object(map) => map.remove(index),
+        Value::Array(arr) => index.parse::<usize>().ok().map(|n| arr.remove(n)),
+        _ => None,
     }
 }
 
@@ -158,5 +180,25 @@ mod tests {
         );
         update_or_create(&mut data, "", Value::Bool(true)).unwrap();
         assert!(data.as_bool().unwrap());
+    }
+
+    #[test]
+    fn delete_works() {
+        let mut data = json!({
+            "фис": 25,
+            "a": {
+                "b": {
+                    "c": true
+                }
+            }
+        });
+        let num = delete(&mut data, "фис");
+        assert_eq!(25, num.unwrap());
+        let flag = delete(&mut data, "a.b.c");
+        assert!(flag.unwrap().as_bool().unwrap());
+        assert_eq!(json!({"a":{"b":{}}}), data);
+        let json = delete(&mut data, "");
+        assert!(data.is_null());
+        assert_eq!(json!({"a":{"b":{}}}), json.unwrap());
     }
 }
