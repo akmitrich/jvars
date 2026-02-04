@@ -106,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn some_data_contracts() {
+    fn some_data_is_deleted() {
         let mut data = json!({
             "registered": "2018-07-24T06:26:18 -03:00",
             "latitude": -1.198644,
@@ -137,10 +137,35 @@ mod tests {
             "greeting": "Hello, Sanchez Daniels! You have 1 unread messages.",
             "favoriteFruit": "apple"
         });
+        assert!(data.delete("some.non-existent.path").is_none());
+        assert!(data.delete("35").is_none());
         assert_eq!("apple", data.delete("favoriteFruit").unwrap());
         for i in 0..3 {
             assert_eq!(&i, data.delete("friends.0").unwrap().path("id").unwrap());
         }
         assert!(data.delete("friends.0").is_none());
+        assert!(data.delete("friends.abc").is_none());
+        assert!(data.delete("friends.-75").is_none());
+        assert_eq!("officia", data.delete("tags.4").unwrap());
+        assert_eq!("cillum", data.delete("tags.5").unwrap());
+        assert!(data.delete("tags.5").is_none());
+        assert!(data.delete("tags.").is_none());
+        assert_eq!(
+            json!({
+                "registered": "2018-07-24T06:26:18 -03:00",
+                "latitude": -1.198644,
+                "longitude": 18.3947,
+                "tags": [
+                  "non",
+                  "aute",
+                  "amet",
+                  "irure",
+                  "ea",
+                ],
+                "friends": [],
+                "greeting": "Hello, Sanchez Daniels! You have 1 unread messages.",
+            }),
+            dbg!(data)
+        );
     }
 }
