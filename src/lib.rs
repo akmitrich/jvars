@@ -5,7 +5,7 @@ mod basic;
 mod error;
 mod ext;
 
-pub use basic::{get, get_mut, update_or_create};
+pub use basic::{delete, get, get_mut, update_or_create};
 pub use error::{Error, Result};
 pub use ext::DataPathExt;
 
