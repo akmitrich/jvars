@@ -4,10 +4,12 @@
 mod basic;
 mod error;
 mod ext;
+mod path_separator;
 
 pub use basic::{delete, get, get_mut, update_or_create};
 pub use error::{Error, Result};
 pub use ext::DataPathExt;
+pub use path_separator::PATH_SEPARATOR;
 
 #[cfg(test)]
 mod tests {
@@ -94,9 +96,9 @@ mod tests {
     #[test]
     fn start_from_null() {
         let mut data = Value::Null;
-        data.update_or_create::<String>([], 42.into()).unwrap();
+        basic::update_or_create(&mut data, "", 42.into()).unwrap();
         assert_eq!(42, data);
-        data.update_or_create(["abc"], true.into()).unwrap();
+        basic::update_or_create(&mut data, "abc", true.into()).unwrap();
         assert_ne!(42, data);
         assert!(data["abc"].as_bool().unwrap());
     }
@@ -133,20 +135,21 @@ mod tests {
             "greeting": "Hello, Sanchez Daniels! You have 1 unread messages.",
             "favoriteFruit": "apple"
         });
-        assert!(data.delete(["some", "non-existent", "path"]).is_none());
-        assert!(data.delete(["35"]).is_none());
-        assert_eq!("apple", data.delete(["favoriteFruit"]).unwrap());
+        println!("path separator: {}", PATH_SEPARATOR.get());
+        assert!(basic::delete(&mut data, "some.non-existent.path").is_none());
+        assert!(basic::delete(&mut data, "35").is_none());
+        assert_eq!("apple", basic::delete(&mut data, "favoriteFruit").unwrap());
         for i in 0..3 {
-            let old = data.delete(["friends", "0"]).unwrap();
+            let old = basic::delete(&mut data, "friends.0").unwrap();
             assert_eq!(&i, basic::get(&old, "id").unwrap());
         }
-        assert!(data.delete(["friends", "0"]).is_none());
-        assert!(data.delete(["friends", "abc"]).is_none());
-        assert!(data.delete(["friends", "-75"]).is_none());
-        assert_eq!("officia", data.delete(["tags", "4"]).unwrap());
-        assert_eq!("cillum", data.delete(["tags", "5"]).unwrap());
-        assert!(data.delete(["tags", "5"]).is_none());
-        assert!(data.delete(["tags", ""]).is_none());
+        assert!(basic::delete(&mut data, "friends.0").is_none());
+        assert!(basic::delete(&mut data, "friends.abc").is_none());
+        assert!(basic::delete(&mut data, "friends.-75").is_none());
+        assert_eq!("officia", basic::delete(&mut data, "tags.4").unwrap());
+        assert_eq!("cillum", basic::delete(&mut data, "tags.5").unwrap());
+        assert!(basic::delete(&mut data, "tags.5").is_none());
+        assert!(basic::delete(&mut data, "tags.").is_none());
         assert_eq!(
             json!({
                 "registered": "2018-07-24T06:26:18 -03:00",

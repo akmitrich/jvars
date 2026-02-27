@@ -6,7 +6,7 @@ pub fn get(json: &Value, path: impl AsRef<str>) -> Option<&Value> {
     if path.as_ref().is_empty() {
         return Some(json);
     }
-    json.path(path.as_ref().split('.'))
+    json.path(path.as_ref().split(crate::PATH_SEPARATOR.get()))
 }
 
 /// Get exclusive reference to the value in dot separated `path` inside `json`
@@ -14,7 +14,7 @@ pub fn get_mut(json: &mut Value, path: impl AsRef<str>) -> Option<&mut Value> {
     if path.as_ref().is_empty() {
         return Some(json);
     }
-    json.path_mut(path.as_ref().split('.'))
+    json.path_mut(path.as_ref().split(crate::PATH_SEPARATOR.get()))
 }
 
 /// Update the `path` inside `json` with `value` or create the dot separated `path` if it does not exist and place `value` in it
@@ -26,7 +26,7 @@ pub fn update_or_create(
     if path.as_ref().is_empty() {
         json.update_or_create::<&str>([], value)
     } else {
-        json.update_or_create(path.as_ref().split('.'), value)
+        json.update_or_create(path.as_ref().split(crate::PATH_SEPARATOR.get()), value)
     }
 }
 
@@ -35,7 +35,7 @@ pub fn delete(json: &mut Value, path: impl AsRef<str>) -> Option<Value> {
     if path.as_ref().is_empty() {
         json.delete::<&str>([])
     } else {
-        json.delete(path.as_ref().split('.'))
+        json.delete(path.as_ref().split(crate::PATH_SEPARATOR.get()))
     }
 }
 
