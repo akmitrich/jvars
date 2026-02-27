@@ -1,12 +1,11 @@
 //! # JVars
 //! Simple tools to deal with JSON values via data paths.
 
-mod basic;
+pub mod basic;
 mod error;
 mod ext;
 mod path_separator;
 
-pub use basic::{delete, get, get_mut, update_or_create};
 pub use error::{Error, Result};
 pub use ext::DataPathExt;
 pub use path_separator::PATH_SEPARATOR;
