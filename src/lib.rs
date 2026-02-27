@@ -28,10 +28,10 @@ mod tests {
               }
             ]
         });
-        assert_eq!(&data, data.path("").unwrap());
-        let id = data.path("friends.0.id").unwrap();
+        assert_eq!(&data, basic::get(&data, "").unwrap());
+        let id = basic::get(&data, "friends.0.id").unwrap();
         assert_eq!(0, id.as_i64().unwrap());
-        let name = data.path_mut("friends.1.name").unwrap();
+        let name = basic::get_mut(&mut data, "friends.1.name").unwrap();
         *name = json!(42);
         assert_eq!(42, data["friends"][1]["name"]);
     }
@@ -54,7 +54,7 @@ mod tests {
               }
             ]
         });
-        assert_eq!(&data.clone(), data.path_mut("").unwrap());
+        assert_eq!(&data.clone(), basic::get_mut(&mut data, "").unwrap());
         data.update_or_create("friends.2.name", json!("Мама"))
             .unwrap();
         assert_eq!("Мама", data["friends"][2]["name"]);
@@ -141,7 +141,8 @@ mod tests {
         assert!(data.delete("35").is_none());
         assert_eq!("apple", data.delete("favoriteFruit").unwrap());
         for i in 0..3 {
-            assert_eq!(&i, data.delete("friends.0").unwrap().path("id").unwrap());
+            let old = data.delete("friends.0").unwrap();
+            assert_eq!(&i, basic::get(&old, "id").unwrap());
         }
         assert!(data.delete("friends.0").is_none());
         assert!(data.delete("friends.abc").is_none());

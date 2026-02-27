@@ -1,6 +1,6 @@
 [package]
 name = "jvars"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2024"
 authors = ["Alexander Kalashnikov"]
 description = "Tools for working with JSON via data paths"

@@ -1,3 +1,4 @@
+use crate::DataPathExt;
 use serde_json::{Value, json};
 
 /// Get shared reference to the value in `path` inside `json`
@@ -5,12 +6,7 @@ pub fn get(json: &Value, path: impl AsRef<str>) -> Option<&Value> {
     if path.as_ref().is_empty() {
         return Some(json);
     }
-    path.as_ref()
-        .split('.')
-        .try_fold(json, |sub_value, next| match sub_value {
-            Value::Array(a) => a.get(next.parse::<usize>().ok()?),
-            _ => sub_value.get(next),
-        })
+    json.path(path.as_ref().split('.'))
 }
 
 /// Get exclusive reference to the value in `path` inside `json`
@@ -18,12 +14,7 @@ pub fn get_mut(json: &mut Value, path: impl AsRef<str>) -> Option<&mut Value> {
     if path.as_ref().is_empty() {
         return Some(json);
     }
-    path.as_ref()
-        .split('.')
-        .try_fold(json, |sub_value, next| match sub_value {
-            Value::Array(a) => a.get_mut(next.parse::<usize>().ok()?),
-            sub_value => sub_value.get_mut(next),
-        })
+    json.path_mut(path.as_ref().split('.'))
 }
 
 /// Update the `path` inside `json` with `value` or create the `path` if it does not exist and place `value` in it
