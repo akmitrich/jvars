@@ -15,7 +15,11 @@ pub trait DataPathExt {
         path: impl IntoIterator<Item = A>,
     ) -> Option<&mut Self::Value>;
     /// Update the `path` inside `self` with `value` or create the `path` if it does not exist and place `value` in it
-    fn update_or_create(&mut self, path: impl AsRef<str>, value: Self::Value) -> crate::Result<()>;
+    fn update_or_create<A: AsRef<str>>(
+        &mut self,
+        path: impl IntoIterator<Item = A>,
+        value: Self::Value,
+    ) -> crate::Result<()>;
     /// Delete the value in the `path` and return it; returns None if there is no value in the `path`
     fn delete(&mut self, path: impl AsRef<str>) -> Option<Self::Value>;
 }
@@ -46,11 +50,92 @@ impl DataPathExt for Value {
         })
     }
 
-    fn update_or_create(&mut self, path: impl AsRef<str>, value: Self::Value) -> crate::Result<()> {
-        basic::update_or_create(self, path, value)
+    fn update_or_create<A: AsRef<str>>(
+        &mut self,
+        path: impl IntoIterator<Item = A>,
+        value: Self::Value,
+    ) -> crate::Result<()> {
+        let path_buf = path.into_iter().collect::<Vec<_>>();
+        let mut current_count = path_buf.len();
+        let mut current_value = self.path_mut(&path_buf);
+        while current_value.is_none() {
+            current_count -= 1;
+            current_value = self.path_mut(&path_buf[..current_count]);
+        }
+        let tail = &path_buf[current_count..];
+        if let Some(dst) = create_destination_if_needed(current_value, tail) {
+            *dst = value;
+            Ok(())
+        } else {
+            Err(crate::Error::InvalidDataPath(
+                path_buf
+                    .into_iter()
+                    .map(|a| a.as_ref().to_string())
+                    .collect::<Vec<_>>()
+                    .join("."),
+            ))
+        }
     }
 
     fn delete(&mut self, path: impl AsRef<str>) -> Option<Self::Value> {
         basic::delete(self, path)
+    }
+}
+
+fn create_destination_if_needed<'a, A: AsRef<str>>(
+    valid: Option<&'a mut Value>,
+    rest_path: &[A],
+) -> Option<&'a mut Value> {
+    if rest_path.is_empty() {
+        valid
+    } else {
+        valid.and_then(|start| {
+            rest_path.iter().try_fold(start, |a, b| {
+                let b = b.as_ref();
+                match a {
+                    Value::Array(arr) => {
+                        // in array index must be `usize`
+                        let i = b.parse().ok()?;
+                        while arr.len() <= i {
+                            // make `i` to be a valid index inside the array
+                            arr.push(Value::Null);
+                        }
+                        arr.get_mut(i)
+                    }
+                    Value::Object(map) => {
+                        map.insert(b.to_string(), Value::Null);
+                        map.get_mut(b)
+                    }
+                    _ => {
+                        if let Ok(i) = b.parse::<usize>() {
+                            // index is `usize` then create an array and enough nulls inside it
+                            *a = Value::Array(vec![Value::Null; i + 1]);
+                            a.get_mut(i)
+                        } else {
+                            // else create an object and put null for key `b`
+                            *a = Value::Object(serde_json::Map::new());
+                            a[b] = Value::Null;
+                            a.get_mut(b)
+                        }
+                    }
+                }
+            })
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn update_value() {
+        let mut data = json!({"abc": {"x": 0, "y": 1}});
+        data.update_or_create(["abc", "x", "polar", "0"], 42.into())
+            .unwrap();
+        println!("Result: {data:#}");
+        data.update_or_create("".split('.'), true.into()).unwrap();
+        println!("Replaced: {data:?}")
     }
 }

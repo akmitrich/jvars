@@ -175,9 +175,9 @@ let mut data = json!({
       }
     ]
 });
-let id = data.path("friends.0.id").unwrap();
+let id = data.path(["friends", "0", "id"]).unwrap();
 assert_eq!(0, id.as_i64().unwrap());
-let name = data.path_mut("friends.1.name").unwrap();
+let name = data.path_mut(["friends", "1", "name"]).unwrap();
 *name = json!(42);
 assert_eq!(42, data["friends"][1]["name"]);
 ```
@@ -199,11 +199,11 @@ let mut data = json!({
       }
     ]
 });
-data.update_or_create("friends.2.name", json!("Мама"))
+data.update_or_create(["friends", "2", "name"], json!("Мама"))
     .unwrap();
 assert_eq!("Мама", data["friends"][2]["name"]);
-data.update_or_create("friends.3.id", 42.into()).unwrap();
-data.update_or_create("friends.3.name", "Юлия".into())
+data.update_or_create(["friends", "3", "id"], 42.into()).unwrap();
+data.update_or_create(["friends", "3", "name"], "Юлия".into())
     .unwrap();
 assert_eq!(
     json!({
@@ -212,13 +212,13 @@ assert_eq!(
     }),
     data["friends"][3]
 );
-data.update_or_create("", Value::Bool(true)).unwrap();
+data.update_or_create::<&str>([], Value::Bool(true)).unwrap();
 assert!(data.as_bool().unwrap());
 ```
 
 ```rust
 let mut data = json!({});
-data.update_or_create("a.b.c.d.e.f", 543.into()).unwrap();
+basic::update_or_create(&mut data, "a.b.c.d.e.f", 543.into()).unwrap();
 println!("{}", serde_json::to_string_pretty(&data).unwrap());
 ```
 Output for above snippet:

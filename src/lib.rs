@@ -28,7 +28,7 @@ mod tests {
               }
             ]
         });
-        assert_eq!(&data, basic::get(&data, "").unwrap());
+        assert_eq!(&data, data.path::<String>([]).unwrap());
         let id = basic::get(&data, "friends.0.id").unwrap();
         assert_eq!(0, id.as_i64().unwrap());
         let name = basic::get_mut(&mut data, "friends.1.name").unwrap();
@@ -54,13 +54,11 @@ mod tests {
               }
             ]
         });
-        assert_eq!(&data.clone(), basic::get_mut(&mut data, "").unwrap());
-        data.update_or_create("friends.2.name", json!("Мама"))
-            .unwrap();
+        assert_eq!(&data.clone(), data.path_mut::<String>([]).unwrap());
+        basic::update_or_create(&mut data, "friends.2.name", json!("Мама")).unwrap();
         assert_eq!("Мама", data["friends"][2]["name"]);
-        data.update_or_create("friends.3.id", 42.into()).unwrap();
-        data.update_or_create("friends.3.name", "Юлия".into())
-            .unwrap();
+        basic::update_or_create(&mut data, "friends.3.id", 42.into()).unwrap();
+        basic::update_or_create(&mut data, "friends.3.name", "Юлия".into()).unwrap();
         assert_eq!(
             json!({
                 "id": 42,
@@ -68,25 +66,25 @@ mod tests {
             }),
             data["friends"][3]
         );
-        data.update_or_create("", Value::Bool(true)).unwrap();
+        data.update_or_create::<String>([], Value::Bool(true))
+            .unwrap();
         assert!(data.as_bool().unwrap());
     }
 
     #[test]
     fn insert_new_objects() {
         let mut data = json!({});
-        data.update_or_create("a.b.c.d.e.f", 543.into()).unwrap();
+        basic::update_or_create(&mut data, "a.b.c.d.e.f", 543.into()).unwrap();
         assert_eq!(543, data["a"]["b"]["c"]["d"]["e"]["f"]);
     }
 
     #[test]
     fn add_enough_elements() {
         let mut data = json!({});
-        data.update_or_create("array1", json!([])).unwrap();
+        data.update_or_create(["array1"], json!([])).unwrap();
         assert!(data["array1"].is_array());
         let n = 501;
-        data.update_or_create(format!("array1.{}", n), true.into())
-            .unwrap();
+        basic::update_or_create(&mut data, format!("array1.{}", n), true.into()).unwrap();
         assert!(
             data["array1"].as_array().unwrap()[..(n - 1)]
                 .iter()
@@ -98,9 +96,9 @@ mod tests {
     #[test]
     fn start_from_null() {
         let mut data = Value::Null;
-        data.update_or_create("", 42.into()).unwrap();
+        data.update_or_create::<String>([], 42.into()).unwrap();
         assert_eq!(42, data);
-        data.update_or_create("abc", true.into()).unwrap();
+        data.update_or_create(["abc"], true.into()).unwrap();
         assert_ne!(42, data);
         assert!(data["abc"].as_bool().unwrap());
     }
