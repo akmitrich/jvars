@@ -28,7 +28,7 @@ mod tests {
               }
             ]
         });
-        assert_eq!(&data, data.path::<String>([]).unwrap());
+        assert_eq!(&data, basic::get(&data, "").unwrap());
         let id = basic::get(&data, "friends.0.id").unwrap();
         assert_eq!(0, id.as_i64().unwrap());
         let name = basic::get_mut(&mut data, "friends.1.name").unwrap();
@@ -54,8 +54,7 @@ mod tests {
               }
             ]
         });
-        assert_eq!(&data.clone(), data.path_mut::<String>([]).unwrap());
-        basic::update_or_create(&mut data, "friends.2.name", json!("Мама")).unwrap();
+        basic::update_or_create(&mut data, "friends.2.name", "Мама".into()).unwrap();
         assert_eq!("Мама", data["friends"][2]["name"]);
         basic::update_or_create(&mut data, "friends.3.id", 42.into()).unwrap();
         basic::update_or_create(&mut data, "friends.3.name", "Юлия".into()).unwrap();
@@ -66,8 +65,7 @@ mod tests {
             }),
             data["friends"][3]
         );
-        data.update_or_create::<String>([], Value::Bool(true))
-            .unwrap();
+        basic::update_or_create(&mut data, "", Value::Bool(true)).unwrap();
         assert!(data.as_bool().unwrap());
     }
 
@@ -135,20 +133,20 @@ mod tests {
             "greeting": "Hello, Sanchez Daniels! You have 1 unread messages.",
             "favoriteFruit": "apple"
         });
-        assert!(data.delete("some.non-existent.path").is_none());
-        assert!(data.delete("35").is_none());
-        assert_eq!("apple", data.delete("favoriteFruit").unwrap());
+        assert!(data.delete(["some", "non-existent", "path"]).is_none());
+        assert!(data.delete(["35"]).is_none());
+        assert_eq!("apple", data.delete(["favoriteFruit"]).unwrap());
         for i in 0..3 {
-            let old = data.delete("friends.0").unwrap();
+            let old = data.delete(["friends", "0"]).unwrap();
             assert_eq!(&i, basic::get(&old, "id").unwrap());
         }
-        assert!(data.delete("friends.0").is_none());
-        assert!(data.delete("friends.abc").is_none());
-        assert!(data.delete("friends.-75").is_none());
-        assert_eq!("officia", data.delete("tags.4").unwrap());
-        assert_eq!("cillum", data.delete("tags.5").unwrap());
-        assert!(data.delete("tags.5").is_none());
-        assert!(data.delete("tags.").is_none());
+        assert!(data.delete(["friends", "0"]).is_none());
+        assert!(data.delete(["friends", "abc"]).is_none());
+        assert!(data.delete(["friends", "-75"]).is_none());
+        assert_eq!("officia", data.delete(["tags", "4"]).unwrap());
+        assert_eq!("cillum", data.delete(["tags", "5"]).unwrap());
+        assert!(data.delete(["tags", "5"]).is_none());
+        assert!(data.delete(["tags", ""]).is_none());
         assert_eq!(
             json!({
                 "registered": "2018-07-24T06:26:18 -03:00",
@@ -164,7 +162,7 @@ mod tests {
                 "friends": [],
                 "greeting": "Hello, Sanchez Daniels! You have 1 unread messages.",
             }),
-            dbg!(data)
+            data
         );
     }
 }

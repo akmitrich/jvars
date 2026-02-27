@@ -24,31 +24,18 @@ pub fn update_or_create(
     value: Value,
 ) -> crate::Result<()> {
     if path.as_ref().is_empty() {
-        *json = value;
-        return Ok(());
+        json.update_or_create::<&str>([], value)
+    } else {
+        json.update_or_create(path.as_ref().split('.'), value)
     }
-    json.update_or_create(path.as_ref().split('.'), value)
 }
 
 /// Delete the value in the `path` and return it; returns None if there is no value in the `path`
 pub fn delete(json: &mut Value, path: impl AsRef<str>) -> Option<Value> {
     if path.as_ref().is_empty() {
-        return Some(json.take());
-    }
-    let last_dot = path.as_ref().rfind('.').unwrap_or(0);
-    let (path, tail) = path.as_ref().split_at(last_dot);
-    let index = tail.strip_prefix(".").unwrap_or(tail);
-    let target = get_mut(json, path)?;
-    match target {
-        Value::Object(map) => map.remove(index),
-        Value::Array(arr) => index.parse::<usize>().ok().and_then(|n| {
-            if n < arr.len() {
-                Some(arr.remove(n))
-            } else {
-                None
-            }
-        }),
-        _ => None,
+        json.delete::<&str>([])
+    } else {
+        json.delete(path.as_ref().split('.'))
     }
 }
 
@@ -116,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn delete_works() {
+    fn unit_test_delete() {
         let mut data = json!({
             "фис": 25,
             "a": {
@@ -125,6 +112,7 @@ mod tests {
                 }
             }
         });
+        assert!(delete(&mut data, "non.existent.data.path").is_none());
         let num = delete(&mut data, "фис");
         assert_eq!(25, num.unwrap());
         let flag = delete(&mut data, "a.b.c");

@@ -1,4 +1,3 @@
-use crate::basic;
 use serde_json::Value;
 
 /// Working horse of the crate.
@@ -21,7 +20,7 @@ pub trait DataPathExt {
         value: Self::Value,
     ) -> crate::Result<()>;
     /// Delete the value in the `path` and return it; returns None if there is no value in the `path`
-    fn delete(&mut self, path: impl AsRef<str>) -> Option<Self::Value>;
+    fn delete<A: AsRef<str>>(&mut self, path: impl IntoIterator<Item = A>) -> Option<Self::Value>;
 }
 
 impl DataPathExt for Value {
@@ -77,8 +76,25 @@ impl DataPathExt for Value {
         }
     }
 
-    fn delete(&mut self, path: impl AsRef<str>) -> Option<Self::Value> {
-        basic::delete(self, path)
+    fn delete<A: AsRef<str>>(&mut self, path: impl IntoIterator<Item = A>) -> Option<Self::Value> {
+        let path_buf = path.into_iter().collect::<Vec<_>>();
+        if path_buf.is_empty() {
+            return Some(self.take());
+        }
+        let (head, tail) = path_buf.split_at(path_buf.len() - 1);
+        let target = self.path_mut(head)?;
+        let index = tail.last()?.as_ref();
+        match target {
+            Value::Object(map) => map.remove(index),
+            Value::Array(arr) => index.parse::<usize>().ok().and_then(|n| {
+                if n < arr.len() {
+                    Some(arr.remove(n))
+                } else {
+                    None
+                }
+            }),
+            _ => None,
+        }
     }
 }
 
