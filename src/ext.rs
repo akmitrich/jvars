@@ -1,8 +1,8 @@
 use serde_json::Value;
 
-/// Working horse of the crate.
+/// Wheelhorse of the crate.
 /// Implemented for `serde_json::Value`.
-/// So you just place it in your scope and use the methods.
+/// So you just place it in your scope and use the provided methods.
 pub trait DataPathExt {
     type Value;
 
@@ -71,7 +71,7 @@ impl DataPathExt for Value {
                     .into_iter()
                     .map(|a| a.as_ref().to_string())
                     .collect::<Vec<_>>()
-                    .join("."),
+                    .join(crate::PATH_SEPARATOR.get()),
             ))
         }
     }
@@ -102,42 +102,38 @@ fn create_destination_if_needed<'a, A: AsRef<str>>(
     valid: Option<&'a mut Value>,
     rest_path: &[A],
 ) -> Option<&'a mut Value> {
-    if rest_path.is_empty() {
-        valid
-    } else {
-        valid.and_then(|start| {
-            rest_path.iter().try_fold(start, |a, b| {
-                let b = b.as_ref();
-                match a {
-                    Value::Array(arr) => {
-                        // in array index must be `usize`
-                        let i = b.parse().ok()?;
-                        while arr.len() <= i {
-                            // make `i` to be a valid index inside the array
-                            arr.push(Value::Null);
-                        }
-                        arr.get_mut(i)
+    valid.and_then(|start| {
+        rest_path.iter().try_fold(start, |current, next_index| {
+            let next = next_index.as_ref();
+            match current {
+                Value::Array(arr) => {
+                    // in array index must be `usize`
+                    let i = next.parse().ok()?;
+                    while arr.len() <= i {
+                        // make `i` to be a valid index inside the array
+                        arr.push(Value::Null);
                     }
-                    Value::Object(map) => {
-                        map.insert(b.to_string(), Value::Null);
-                        map.get_mut(b)
-                    }
-                    _ => {
-                        if let Ok(i) = b.parse::<usize>() {
-                            // index is `usize` then create an array and enough nulls inside it
-                            *a = Value::Array(vec![Value::Null; i + 1]);
-                            a.get_mut(i)
-                        } else {
-                            // else create an object and put null for key `b`
-                            *a = Value::Object(serde_json::Map::new());
-                            a[b] = Value::Null;
-                            a.get_mut(b)
-                        }
+                    arr.get_mut(i)
+                }
+                Value::Object(map) => {
+                    map.insert(next.to_string(), Value::Null);
+                    map.get_mut(next)
+                }
+                _ => {
+                    if let Ok(i) = next.parse::<usize>() {
+                        // index is `usize` then create an array and enough nulls inside it
+                        *current = Value::Array(vec![Value::Null; i + 1]);
+                        current.get_mut(i)
+                    } else {
+                        // else create an object and put null for key `next`
+                        *current = Value::Object(serde_json::Map::new());
+                        current[next] = Value::Null;
+                        current.get_mut(next)
                     }
                 }
-            })
+            }
         })
-    }
+    })
 }
 
 #[cfg(test)]

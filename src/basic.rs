@@ -4,17 +4,19 @@ use serde_json::Value;
 /// Get shared reference to the value in dot separated `path` inside `json`
 pub fn get(json: &Value, path: impl AsRef<str>) -> Option<&Value> {
     if path.as_ref().is_empty() {
-        return Some(json);
+        Some(json)
+    } else {
+        json.path(path.as_ref().split(crate::PATH_SEPARATOR.get()))
     }
-    json.path(path.as_ref().split(crate::PATH_SEPARATOR.get()))
 }
 
 /// Get exclusive reference to the value in dot separated `path` inside `json`
 pub fn get_mut(json: &mut Value, path: impl AsRef<str>) -> Option<&mut Value> {
     if path.as_ref().is_empty() {
-        return Some(json);
+        Some(json)
+    } else {
+        json.path_mut(path.as_ref().split(crate::PATH_SEPARATOR.get()))
     }
-    json.path_mut(path.as_ref().split(crate::PATH_SEPARATOR.get()))
 }
 
 /// Update the `path` inside `json` with `value` or create the dot separated `path` if it does not exist and place `value` in it

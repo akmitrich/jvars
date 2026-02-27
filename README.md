@@ -1,14 +1,19 @@
 # JVars
+
 Simple tools to deal with JSON values via data paths.
 
 ## Dependencies
-The crate has `DataPathExt` trait along with its implementation for 
+
+The crate has `DataPathExt` trait along with its implementation for
+
 - `serde_json::Value`.
 
 Pull requests are welcomed.
 
 ## Data path
+
 Let's say we have
+
 ```json
 {
     "registered": "2018-07-24T06:26:18 -03:00",
@@ -45,20 +50,25 @@ Let's say we have
 Special case of empty path is the whole JSON itself.
 
 ### Get data
+
 Examples of paths:
+
 - `registered` -> "2018-07-24T06:26:18 -03:00"
 - `latitude` -> -1.198644
 - `tags.3` -> "irure"
-- `friends.1` -> 
+- `friends.1` ->
+
 ```json
 {
     "id": 1,
     "name": "Fuentes Carroll"
 }
 ```
+
 - `friends.1.id` -> 1
 - `friends.1.name` -> "Fuentes Carroll"
 - `tags` ->
+
 ```json
 [
     "non",
@@ -70,7 +80,9 @@ Examples of paths:
     "cillum"
 ]
 ```
+
 - `` ->
+
 ```json
 {
     "registered": "2018-07-24T06:26:18 -03:00",
@@ -107,7 +119,9 @@ Examples of paths:
 Hope you see the idea of data path clearly.
 
 ### Set data
+
 Update value in path `friends.2.name="Мама"`. `friends` array becomes
+
 ```json
 [
   {
@@ -126,6 +140,7 @@ Update value in path `friends.2.name="Мама"`. `friends` array becomes
 ```
 
 Create value in path `friends.3.name="Юлия"`. `friends` array becomes
+
 ```json
 [
   {
@@ -147,12 +162,15 @@ Create value in path `friends.3.name="Юлия"`. `friends` array becomes
 ```
 
 Creating value inside array you expect that enough `null`s will be added. Let's take
+
 ```json
 {
   "array1": []
 }
 ```
+
 and create `5` in path `array1.5`. We end up with
+
 ```json
 {
   "array1": [ null, null, null, null, null, 5 ]
@@ -162,6 +180,7 @@ and create `5` in path `array1.5`. We end up with
 I hope you get the idea behind `update_or_create` function.
 
 ## Some code snippets
+
 ```rust
 let mut data = json!({
     "friends": [
@@ -221,7 +240,9 @@ let mut data = json!({});
 basic::update_or_create(&mut data, "a.b.c.d.e.f", 543.into()).unwrap();
 println!("{}", serde_json::to_string_pretty(&data).unwrap());
 ```
+
 Output for above snippet:
+
 ```json
 {
   "a": {
@@ -249,6 +270,7 @@ println!("{}", serde_json::to_string_pretty(&data).unwrap());
 ```
 
 Output is
+
 ```json
 {
   "array1": [
